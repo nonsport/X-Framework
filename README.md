@@ -18,7 +18,7 @@ X-Framework — это высокотехнологичная модульная
 
 1. Клонирование репозитория
 Откройте терминал и выполните: 
-git clone https://github.com/nonsport/X-Framework.git
+git clone https://github.com/nonsport/X-Framework.git &&
 cd X-Framework
 
 2. Установка зависимостей 
@@ -53,7 +53,7 @@ X-Framework не собирает, не хранит и не передает л
 🤝 Коллаборация
 Проект является результатом совместных усилий:
 sept1kie — ведущий разработчик, архитектура ядра.
-NONINT — дизайн интерфейса, логика плагинов и оптимизация.
+gemeni — нечего не сделал
 <p align="center">
 <i>Developed with passion for OSINT community. 2024.</i>
 </p>
