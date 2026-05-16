@@ -66,7 +66,7 @@ async def scan_username_deep(username):
     # Расширенный список платформ с продвинутой логикой проверки
     sites = {
         "GitHub": {"url": f"https://github.com/{username}"},
-        "Telegram": {"url": f"https://t.me/{username}", "must_contain": 'tgme_page_extra'}, # Проверка наличия блока с инфой о пользователе
+        "Telegram": {"url": f"https://t.me/{username}", "must_contain": 'tgme_page_extra'}, 
         "VKontakte": {"url": f"https://vk.com/{username}"},
         "Steam": {"url": f"https://steamcommunity.com/id/{username}", "not_found": "The specified profile could not be found"},
         "Chess.com": {"url": f"https://www.chess.com/member/{username}"},
@@ -87,7 +87,7 @@ async def scan_username_deep(username):
                     if resp.status == 200:
                         html = await resp.text()
                         
-                        # Обработка ложных 200 OK (когда сайт отдает страницу с ошибкой внутри)
+                        # Обработка ложных 200 OK
                         if "not_found" in config and config["not_found"] in html:
                             results[name] = {"Status": "❌ Не найден (Ложный 200 OK)"}
                             continue
@@ -149,3 +149,30 @@ async def scan_phone(phone):
     async with aiohttp.ClientSession() as session:
         num = await fetch_json(session, "http://apilayer.net/api/validate", params={"access_key": N_K, "number": phone})
         return {"Numverify": num}
+
+# --- Новые бесплатные модули ---
+async def scan_ip_geo_free(ip):
+    async with aiohttp.ClientSession() as session:
+        url = f"http://ip-api.com/json/{ip}?fields=status,message,country,countryCode,regionName,city,zip,lat,lon,timezone,isp,org,as,mobile,proxy,hosting"
+        data = await fetch_json(session, url)
+        return {"IP_Geo_Free": data}
+
+async def scan_subdomains_free(domain):
+    async with aiohttp.ClientSession() as session:
+        url = f"https://crt.sh/?q={domain}&output=json"
+        try:
+            async with session.get(url, timeout=15) as resp:
+                if resp.status == 200:
+                    data = await resp.json()
+                    subdomains = set()
+                    for item in data:
+                        name = item.get("name_value", "")
+                        for sub in name.split("\n"):
+                            sub = sub.replace("*.", "").strip()
+                            if sub and sub.endswith(domain):
+                                subdomains.add(sub)
+                    return {"Subdomains_Found": sorted(list(subdomains))}
+                return {"Subdomains_Found": {"error": f"HTTP {resp.status}"}}
+        except Exception as e:
+            return {"Subdomains_Found": {"error": str(e)}}
+
