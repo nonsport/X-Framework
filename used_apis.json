@@ -1,0 +1,88 @@
+{
+    "framework_name": "X-Framework",
+    "project_branding": "septik",
+    "version": "1.0.1",
+    "apis_used": [
+        {
+            "name": "Shodan API",
+            "category": "IP & Infrastructure Search",
+            "endpoint": "https://api.shodan.io/shodan/host/{ip}",
+            "auth_required": true,
+            "auth_type": "API Key (S_K)",
+            "description": "Поиск открытых портов, уязвимостей, активных сервисов и метаданных хоста по его IP-адресу."
+        },
+        {
+            "name": "AbuseIPDB API",
+            "category": "IP & Infrastructure Search",
+            "endpoint": "https://api.abuseipdb.com/api/v2/check",
+            "auth_required": true,
+            "auth_type": "API Key (A_K)",
+            "description": "Проверка IP-адреса на участие в хакерских атаках, спаме, брутфорсе и фиксация уровня доверия/жалоб."
+        },
+        {
+            "name": "Hunter.io API",
+            "category": "Domain & Email Search",
+            "endpoint": "https://api.hunter.io/v2/domain-search",
+            "auth_required": true,
+            "auth_type": "API Key (H_K)",
+            "description": "Поиск корпоративных и связанных адресов электронной почты, зарегистрированных за конкретным доменом."
+        },
+        {
+            "name": "Numverify API",
+            "category": "Phone & Identity Search",
+            "endpoint": "http://apilayer.net/api/validate",
+            "auth_required": true,
+            "auth_type": "API Key (N_K)",
+            "description": "Валидация номеров телефонов: определение страны, оператора связи, локации и типа линии (мобильный/городской)."
+        },
+        {
+            "name": "IP-API (Free)",
+            "category": "Free IP Geolocation",
+            "endpoint": "http://ip-api.com/json/{ip}",
+            "auth_required": false,
+            "auth_type": "None (Public API)",
+            "description": "Бесплатная точная геолокация IP, включая координаты (широта/долгота), ISP, ASN, временную зону и флаги хостинга/прокси."
+        },
+        {
+            "name": "crt.sh (Free)",
+            "category": "Free Subdomain Scanner",
+            "endpoint": "https://crt.sh/?q={domain}&output=json",
+            "auth_required": false,
+            "auth_type": "None (Public API)",
+            "description": "Сбор и парсинг поддоменов целевого сайта на основе истории публично выпущенных SSL/TLS сертификатов."
+        },
+        {
+            "name": "Blockchain.info API",
+            "category": "Crypto Wallet Check (Plugin)",
+            "endpoint": "https://blockchain.info/rawaddr/{wallet_address}",
+            "auth_required": false,
+            "auth_type": "None (Public API)",
+            "description": "Интегрированный плагин crypto_scan для проверки баланса, количества транзакций и активности BTC-кошелька."
+        }
+    ],
+    "scraping_and_intelligence_modules": [
+        {
+            "name": "Deep Username Scan",
+            "method": "Asynchronous Web Scraping",
+            "targets": [
+                "GitHub",
+                "Telegram",
+                "VKontakte",
+                "Steam",
+                "Chess.com",
+                "Reddit",
+                "Habr",
+                "Pikabu",
+                "Linktree",
+                "TryHackMe",
+                "Pastebin"
+            ],
+            "description": "Глубокий поиск никнеймов без API-ключей, использующий подмену User-Agent, анализ HTTP-статусов и контентных маркеров (сигнатур) страниц."
+        },
+        {
+            "name": "Google Dorks Generator",
+            "method": "Dork Link Generation",
+            "description": "Автоматическое формирование поисковых запросов (Google Dorks) для обнаружения открытых конфигурационных файлов (.env), баз данных (.sql) и панелей администратора."
+        }
+    ]
+}
