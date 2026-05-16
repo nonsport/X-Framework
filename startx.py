@@ -118,8 +118,8 @@ async def menu():
         table.add_row("[6]", "Generate Fake Identity")
         table.add_row("[7]", "Password Generator")
         table.add_row("[8]", "Base64 Encoder / Decoder")
-        table.add_row("[9]", "Free IP Geolocation (ip-api.com)")
-        table.add_row("[10]", "Free Subdomain Scanner (crt.sh)")
+        table.add_row("[9]", "IP Geolocation")
+        table.add_row("[10]", "Subdomain Scanner")
         
         # Динамическое добавление плагинов в меню
         plugin_mapping = {}
