@@ -8,7 +8,9 @@ from rich.panel import Panel
 from rich.align import Align
 from rich.text import Text
 from rich.table import Table
+from rich.tree import Tree
 from rich.live import Live
+import rich.box
 from prompt_toolkit import PromptSession
 from prompt_toolkit.completion import WordCompleter
 from prompt_toolkit.styles import Style as PTStyle
@@ -19,22 +21,25 @@ import apis
 init(autoreset=True)
 console = Console()
 
-LOGO_LINES = [
-    r"███████╗       ███████╗",
-    r"╚███████╗     ███████╔╝",
-    r" ╚███████╗   ███████╔╝ ",
-    r"  ╚███████╗ ███████╔╝  ",
-    r"   ╚██████████████╔╝   ",
-    r"    ╚████████████╔╝    ",
-    r"    ██████████████╗    ",
-    r"   ███████╔████████╗   ",
-    r"  ███████╔╝ ╚███████╗  ",
-    r" ███████╔╝   ╚███████╗ ",
-    r"███████╔╝     ╚███████╗",
-    r"╚══════╝       ╚══════╝"
+# Новый логотип
+BIG_X = [
+    r"████████╗          ████████╗",
+    r"╚████████╗        ████████╔╝",
+    r" ╚████████╗      ████████╔╝ ",
+    r"  ╚████████╗    ████████╔╝  ",
+    r"   ╚████████╗  ████████╔╝   ",
+    r"    ╚████████████████╔╝     ",
+    r"     ╚██████████████╔╝      ",
+    r"     ████████████████╗      ",
+    r"    ████████╔█████████╗     ",
+    r"   ████████╔╝ ╚████████╗    ",
+    r"  ████████╔╝   ╚████████╗   ",
+    r" ████████╔╝     ╚████████╗  ",
+    r"████████╔╝       ╚████████╗ ",
+    r"╚═══════╝         ╚═══════╝ "
 ]
 
-DESCRIPTION = "X-Framework | Advanced OSINT Architecture"
+DESCRIPTION = "Advanced OSINT Architecture"
 PLUGINS_DIR = "plugins"
 
 # --- СИСТЕМА ПЛАГИНОВ ---
@@ -55,46 +60,105 @@ def load_plugins():
             if hasattr(mod, "PLUGIN_NAME") and hasattr(mod, "run"):
                 loaded_plugins[name] = mod
 
-# --- ИНТЕРФЕЙС ---
-def display_header():
+# --- АНИМАЦИИ И ИНТЕРФЕЙС ---
+async def intro_animation():
     os.system('clear' if os.name == 'posix' else 'cls')
+    console.print("\n")
     
-    logo_text = Text("\n".join(LOGO_LINES), style="bold red", justify="center")
-    desc_text = Text(DESCRIPTION, style="red", justify="center")
+    # Анимация появления лого
+    for line in BIG_X:
+        console.print(Align.center(f"[bold red]{line}[/bold red]"))
+        await asyncio.sleep(0.08)
     
-    console.print(logo_text)
-    console.print(desc_text)
-    console.print()
+    await asyncio.sleep(0.3)
+    # Появление названия
+    console.print(Align.center("\n[bold white]X - F R A M E W O R K[/bold white]"))
+    await asyncio.sleep(0.3)
+    console.print(Align.center(f"[dim red]{DESCRIPTION}[/dim red]\n"))
+    await asyncio.sleep(0.8)
+
+def draw_static_header():
+    os.system('clear' if os.name == 'posix' else 'cls')
+    for line in BIG_X:
+        console.print(Align.center(f"[bold red]{line}[/bold red]"))
+    console.print(Align.center("\n[bold white]X - F R A M E W O R K[/bold white]"))
+    console.print(Align.center(f"[dim red]{DESCRIPTION}[/dim red]\n"))
+
+# Красивый древовидный вывод результатов
+def build_result_tree(data, tree=None, name="Result"):
+    if tree is None:
+        tree = Tree(f"[bold red]❖ {name} ❖[/bold red]", guide_style="bold red")
+    
+    if isinstance(data, dict):
+        for k, v in data.items():
+            if isinstance(v, (dict, list)):
+                subtree = tree.add(f"[bold white]{k}[/bold white]")
+                build_result_tree(v, subtree, k)
+            else:
+                tree.add(f"[bold white]{k}:[/bold white] [green]{v}[/green]")
+    elif isinstance(data, list):
+        for item in data:
+            if isinstance(item, (dict, list)):
+                subtree = tree.add("[bold white]>[/bold white]")
+                build_result_tree(item, subtree, "Item")
+            else:
+                tree.add(f"[green]{item}[/green]")
+    else:
+        tree.add(f"[green]{data}[/green]")
+    return tree
 
 async def run_module(coro, target):
-    title = f"❖ Выполнение: {target} ❖"
+    title = f" Выполнение: {target} "
     console.print(Align.center(Text(title, style="bold red")))
     
-    # Использование встроенного спиннера rich
-    with console.status("[bold red]Обработка данных (Bypassing & Scraping)...[/bold red]", spinner="bouncingBar"):
+    with console.status("[bold red]Анализ данных...[/bold red]", spinner="bouncingBar"):
         results = await coro
         
     for mod, data in results.items():
         is_error = "error" in str(data).lower()
         color = "red" if is_error else "green"
-        icon = "✖" if is_error else "✔"
+        
+        # Используем древовидный видер
+        tree = build_result_tree(data, name=mod)
         
         panel = Panel(
-            str(data),
-            title=f"[{color}]{icon} {mod}[/{color}]",
+            tree,
+            title=f"[{color}]{mod}[/{color}]",
             border_style="red",
             expand=False
         )
         console.print(Align.center(panel))
         console.print()
 
+def create_module_panel(title, items):
+    """Создает отдельный красивый блок для модуля"""
+    table = Table(show_header=False, box=None, padding=(0, 2))
+    table.add_column("ID", style="bold red", justify="right")
+    table.add_column("Desc", style="white")
+    
+    for uid, desc in items:
+        table.add_row(f"[{uid}]", desc)
+        
+    return Panel(table, title=f"[bold white]{title}[/bold white]", border_style="red", expand=False)
+
 async def menu():
     load_plugins()
+    await intro_animation()
     
     # Настройка автозаполнения
-    base_commands = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '0', 'IP', 'Domain', 'Phone', 'User', 'Exit']
-    plugin_commands = [str(10 + i) for i in range(1, len(loaded_plugins) + 1)]
-    completer = WordCompleter(base_commands + plugin_commands, ignore_case=True)
+    plugin_mapping = {}
+    idx = 1
+    for p_name, p_mod in loaded_plugins.items():
+        plugin_mapping[f"3.{idx}"] = p_mod
+        idx += 1
+
+    base_commands = [
+        '1.1', '1.2', '1.3', '1.4', '1.5', '1.6',
+        '2.1', '2.2', '2.3', '2.4',
+        '0', 'exit'
+    ] + list(plugin_mapping.keys())
+    
+    completer = WordCompleter(base_commands, ignore_case=True)
     
     style = PTStyle.from_dict({
         'prompt': 'ansired bold',
@@ -103,93 +167,108 @@ async def menu():
     session = PromptSession(style=style)
 
     while True:
-        display_header()
+        draw_static_header()
         
-        # Построение таблицы меню
-        table = Table(show_header=False, border_style="red", box=rich.box.ROUNDED)
-        table.add_column("ID", style="bold red", justify="right")
-        table.add_column("Module", style="white")
+        # --- Блок 1: Recon ---
+        recon_items = [
+            ("1.1", "IP & Infrastructure Search"),
+            ("1.2", "Domain & Email Search"),
+            ("1.3", "Phone & Identity Search"),
+            ("1.4", "Username Global Scan (Deep Dive)"),
+            ("1.5", "IP Geolocation (Free)"),
+            ("1.6", "Subdomain Scanner (Free)")
+        ]
+        console.print(Align.center(create_module_panel("Module 1: Recon", recon_items)))
         
-        table.add_row("[1]", "IP & Infrastructure Search")
-        table.add_row("[2]", "Domain & Email Search")
-        table.add_row("[3]", "Phone & Identity Search")
-        table.add_row("[4]", "Username Global Scan (Deep Dive)")
-        table.add_row("[5]", "Google Dorks Generator")
-        table.add_row("[6]", "Generate Fake Identity")
-        table.add_row("[7]", "Password Generator")
-        table.add_row("[8]", "Base64 Encoder / Decoder")
-        table.add_row("[9]", "IP Geolocation")
-        table.add_row("[10]", "Subdomain Scanner")
-        
-        # Динамическое добавление плагинов в меню
-        plugin_mapping = {}
-        idx = 11
-        for p_name, p_mod in loaded_plugins.items():
-            table.add_row(f"[{idx}]", f"{p_mod.PLUGIN_NAME} (Plugin)")
-            plugin_mapping[str(idx)] = p_mod
-            idx += 1
+        # --- Блок 2: Tools ---
+        tools_items = [
+            ("2.1", "Google Dorks Generator"),
+            ("2.2", "Generate Fake Identity"),
+            ("2.3", "Password Generator"),
+            ("2.4", "Base64 Encoder / Decoder")
+        ]
+        console.print(Align.center(create_module_panel("Module 2: Tools", tools_items)))
+
+        # --- Блок 3: Plugins ---
+        plugin_items = []
+        if not plugin_mapping:
+            plugin_items.append(("-", "[dim]No plugins loaded[/dim]"))
+        for k, v in plugin_mapping.items():
+            plugin_items.append((k, f"{v.PLUGIN_NAME} (Plugin)"))
             
-        table.add_row("[0]", "[bold red]Exit Framework[/bold red]")
+        console.print(Align.center(create_module_panel("Module 3: Plugins", plugin_items)))
         
-        console.print(Align.center(table))
+        # --- Блок Выхода ---
+        console.print()
+        exit_panel = Panel("[0] Exit Framework", style="bold red", expand=False, border_style="red")
+        console.print(Align.center(exit_panel))
         console.print()
 
         try:
             choice = await session.prompt_async("➤ X-Terminal > ", completer=completer)
+            choice = choice.strip()
         except (EOFError, KeyboardInterrupt):
             break
 
-        if choice == '1':
+        # --- Обработка команд Recon ---
+        if choice == '1.1':
             target = await session.prompt_async("❖ Введите IP: ")
             await run_module(apis.scan_ip(target), f"IP: {target}")
-        elif choice == '2':
+        elif choice == '1.2':
             target = await session.prompt_async("❖ Введите Домен: ")
             await run_module(apis.scan_domain(target), f"Domain: {target}")
-        elif choice == '3':
+        elif choice == '1.3':
             target = await session.prompt_async("❖ Введите Номер: ")
             await run_module(apis.scan_phone(target), f"Phone: {target}")
-        elif choice == '4':
+        elif choice == '1.4':
             target = await session.prompt_async("❖ Введите Username: ")
             await run_module(apis.scan_username_deep(target), f"User Deep Dive: {target}")
-        elif choice == '5':
+        elif choice == '1.5':
+            target = await session.prompt_async("❖ Введите IP: ")
+            await run_module(apis.scan_ip_geo_free(target), f"Free IP Geo: {target}")
+        elif choice == '1.6':
+            target = await session.prompt_async("❖ Введите Домен: ")
+            await run_module(apis.scan_subdomains_free(target), f"Free Subdomains: {target}")
+            
+        # --- Обработка команд Tools ---
+        elif choice == '2.1':
             target = await session.prompt_async("❖ Введите Домен для Dorks: ")
             await run_module(apis.google_dorks_scan(target), f"Dorks: {target}")
-        elif choice == '6':
+        elif choice == '2.2':
             target = await session.prompt_async("❖ Введите локаль [Enter=ru_RU]: ") or 'ru_RU'
             await run_module(apis.get_fake_identity_async(target), f"Identity [{target}]")
-        elif choice == '7':
+        elif choice == '2.3':
             try:
-                length = int(await session.prompt_async("❖ Длина пароля (6-32): "))
+                length_input = await session.prompt_async("❖ Длина пароля (6-32): ")
+                length = int(length_input)
                 pwd = apis.generate_password(length)
-                console.print(Align.center(f"\n[bold green]✔ Сгенерированный пароль: [white]{pwd}"))
+                console.print(Align.center(f"\n[bold green]✔ Сгенерированный пароль:[/bold green] [white]{pwd}[/white]"))
             except ValueError:
-                console.print(Align.center(f"\n[bold red]✖ Ошибка: Введите число!"))
-        elif choice == '8':
+                console.print(Align.center("\n[bold red]✖ Ошибка: Введите число![/bold red]"))
+        elif choice == '2.4':
             action = await session.prompt_async("❖ [1] Encode | [2] Decode : ")
             text = await session.prompt_async("❖ Введите текст: ")
             if action == '1':
                 await run_module(apis.b64_encode(text), "Base64 Encode")
             elif action == '2':
                 await run_module(apis.b64_decode(text), "Base64 Decode")
-        elif choice == '9':
-            target = await session.prompt_async("❖ Введите IP: ")
-            await run_module(apis.scan_ip_geo_free(target), f"Free IP Geo: {target}")
-        elif choice == '10':
-            target = await session.prompt_async("❖ Введите Домен: ")
-            await run_module(apis.scan_subdomains_free(target), f"Free Subdomains: {target}")
+                
+        # --- Обработка плагинов ---
         elif choice in plugin_mapping:
-            # Запуск динамического плагина
             target = await session.prompt_async(f"❖ Введите цель для {plugin_mapping[choice].PLUGIN_NAME}: ")
             await run_module(plugin_mapping[choice].run(target), f"Plugin: {plugin_mapping[choice].PLUGIN_NAME}")
+            
+        # --- Выход ---
         elif choice in ['0', 'Exit', 'exit']:
             os.system('clear' if os.name == 'posix' else 'cls')
-            console.print("[bold red]Завершение работы X-Framework...[/bold red]")
+            console.print(Align.center("\n[bold red]Завершение работы X-Framework... Удачи![/bold red]\n"))
             break
 
-        await session.prompt_async("\n[ Enter для возврата в меню ]")
+        # Пауза перед возвратом в меню
+        if choice not in ['0', 'Exit', 'exit'] and choice in base_commands:
+            await session.prompt_async("\n[ Enter для возврата в меню ]")
 
 if __name__ == "__main__":
-    import rich.box
     try:
         asyncio.run(menu())
     except KeyboardInterrupt:
