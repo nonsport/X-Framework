@@ -92,8 +92,8 @@ async def menu():
     load_plugins()
     
     # Настройка автозаполнения
-    base_commands = ['1', '2', '3', '4', '5', '6', '7', '8', '0', 'IP', 'Domain', 'Phone', 'User', 'Exit']
-    plugin_commands = [str(8 + i) for i in range(1, len(loaded_plugins) + 1)]
+    base_commands = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '0', 'IP', 'Domain', 'Phone', 'User', 'Exit']
+    plugin_commands = [str(10 + i) for i in range(1, len(loaded_plugins) + 1)]
     completer = WordCompleter(base_commands + plugin_commands, ignore_case=True)
     
     style = PTStyle.from_dict({
@@ -118,10 +118,12 @@ async def menu():
         table.add_row("[6]", "Generate Fake Identity")
         table.add_row("[7]", "Password Generator")
         table.add_row("[8]", "Base64 Encoder / Decoder")
+        table.add_row("[9]", "Free IP Geolocation (ip-api.com)")
+        table.add_row("[10]", "Free Subdomain Scanner (crt.sh)")
         
         # Динамическое добавление плагинов в меню
         plugin_mapping = {}
-        idx = 9
+        idx = 11
         for p_name, p_mod in loaded_plugins.items():
             table.add_row(f"[{idx}]", f"{p_mod.PLUGIN_NAME} (Plugin)")
             plugin_mapping[str(idx)] = p_mod
@@ -169,6 +171,12 @@ async def menu():
                 await run_module(apis.b64_encode(text), "Base64 Encode")
             elif action == '2':
                 await run_module(apis.b64_decode(text), "Base64 Decode")
+        elif choice == '9':
+            target = await session.prompt_async("❖ Введите IP: ")
+            await run_module(apis.scan_ip_geo_free(target), f"Free IP Geo: {target}")
+        elif choice == '10':
+            target = await session.prompt_async("❖ Введите Домен: ")
+            await run_module(apis.scan_subdomains_free(target), f"Free Subdomains: {target}")
         elif choice in plugin_mapping:
             # Запуск динамического плагина
             target = await session.prompt_async(f"❖ Введите цель для {plugin_mapping[choice].PLUGIN_NAME}: ")
@@ -181,7 +189,7 @@ async def menu():
         await session.prompt_async("\n[ Enter для возврата в меню ]")
 
 if __name__ == "__main__":
-    import rich.box # Локальный импорт для коробки таблиц
+    import rich.box
     try:
         asyncio.run(menu())
     except KeyboardInterrupt:
