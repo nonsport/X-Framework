@@ -63,20 +63,37 @@ async def fetch_json(session, url, headers=None, params=None):
 
 # --- Deep Dive Соцсети без API ---
 async def scan_username_deep(username):
+    # Расширенный список платформ с продвинутой логикой проверки
     sites = {
-        "GitHub": f"https://github.com/{username}",
-        "Linktree": f"https://linktr.ee/{username}",
-        "TryHackMe": f"https://tryhackme.com/p/{username}",
-        "Pastebin": f"https://pastebin.com/u/{username}"
+        "GitHub": {"url": f"https://github.com/{username}"},
+        "Telegram": {"url": f"https://t.me/{username}", "must_contain": 'tgme_page_extra'}, # Проверка наличия блока с инфой о пользователе
+        "VKontakte": {"url": f"https://vk.com/{username}"},
+        "Steam": {"url": f"https://steamcommunity.com/id/{username}", "not_found": "The specified profile could not be found"},
+        "Chess.com": {"url": f"https://www.chess.com/member/{username}"},
+        "Reddit": {"url": f"https://www.reddit.com/user/{username}"},
+        "Habr": {"url": f"https://habr.com/ru/users/{username}/", "not_found": "Страница не найдена"},
+        "Pikabu": {"url": f"https://pikabu.ru/@{username}", "not_found": "Ошибка 404"},
+        "Linktree": {"url": f"https://linktr.ee/{username}"},
+        "TryHackMe": {"url": f"https://tryhackme.com/p/{username}", "not_found": "User not found"},
+        "Pastebin": {"url": f"https://pastebin.com/u/{username}", "not_found": "Not Found"}
     }
     results = {}
     
     async with aiohttp.ClientSession(headers=get_headers()) as session:
-        for name, url in sites.items():
+        for name, config in sites.items():
+            url = config["url"]
             try:
                 async with session.get(url, timeout=7) as resp:
                     if resp.status == 200:
                         html = await resp.text()
+                        
+                        # Обработка ложных 200 OK (когда сайт отдает страницу с ошибкой внутри)
+                        if "not_found" in config and config["not_found"] in html:
+                            results[name] = {"Status": "❌ Не найден (Ложный 200 OK)"}
+                            continue
+                        if "must_contain" in config and config["must_contain"] not in html:
+                            results[name] = {"Status": "❌ Не найден (Ложный 200 OK)"}
+                            continue
                         
                         # Вытягиваем Title
                         title_match = re.search(r'<title>(.*?)</title>', html, re.IGNORECASE)
@@ -92,6 +109,8 @@ async def scan_username_deep(username):
                             "Title": title,
                             "Bio": bio[:100] + "..." if len(bio) > 100 else bio
                         }
+                    elif resp.status == 404:
+                        results[name] = {"Status": f"❌ Не найден (HTTP 404)"}
                     else:
                         results[name] = {"Status": f"❌ Не найден (HTTP {resp.status})"}
             except Exception as e:
@@ -130,4 +149,3 @@ async def scan_phone(phone):
     async with aiohttp.ClientSession() as session:
         num = await fetch_json(session, "http://apilayer.net/api/validate", params={"access_key": N_K, "number": phone})
         return {"Numverify": num}
-
