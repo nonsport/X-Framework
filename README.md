@@ -2,7 +2,7 @@
 <p align="center">
 <img src="https://raw.githubusercontent.com/nonsport/X-Framework/main/assets/logo_preview.png" alt="X-Framework Logo" width="200">
 </p>
-X-Framework — это высокотехнологичная модульная платформа для проведения разведки по открытым источникам (OSINT). Проект разработан sept1kie в тесном сотрудничестве с проектом NONINT.
+X-Framework — это высокотехнологичная модульная платформа для проведения разведки по Open Source Intelligence (OSINT). Проект разработан sept1kie.
 Инструмент сочетает в себе агрессивный "хакерский" дизайн, высокую скорость работы благодаря асинхронности и гибкость за счет системы внешних плагинов.
 
 🔥 Основные особенности
