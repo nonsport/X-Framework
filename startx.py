@@ -174,9 +174,9 @@ async def menu():
             ("1.1", "IP & Infrastructure Search"),
             ("1.2", "Domain & Email Search"),
             ("1.3", "Phone & Identity Search"),
-            ("1.4", "Username Global Scan (Deep Dive)"),
-            ("1.5", "IP Geolocation (Free)"),
-            ("1.6", "Subdomain Scanner (Free)")
+            ("1.4", "Username Global Scan"),
+            ("1.5", "IP Geolocation"),
+            ("1.6", "Subdomain Scanner")
         ]
         console.print(Align.center(create_module_panel("Module 1: Recon", recon_items)))
         
